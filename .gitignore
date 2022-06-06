@@ -8,7 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-.idea/*
+.idea/
 env/
 local_env/
 build/
@@ -103,3 +103,4 @@ rsa-key
 tags
 singer-check-tap-data
 state.json
+
