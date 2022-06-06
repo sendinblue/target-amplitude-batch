@@ -1,6 +1,9 @@
 {
-  "projectID": "1234",
-  "api_key": "Amplitude api_key of projectID 1234",
-  "secret_key": "Amplitude secret_key of projectID 1234",
+  "api_key": "Amplitude api_key of Amplitude projectID",
+  "flush_queue_size": 100,
+  "flush_interval_millis": 10000,
+  "flush_max_retries": 5,
+  "use_batch": true,
+  "is_batch_identify": false,
   "start_date": "2000-01-01T00:00:00Z"
 }

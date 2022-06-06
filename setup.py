@@ -8,7 +8,7 @@ setup(
     version=VERSION,
     description="Singer.io target for loading data to Amplitude Batch / Identify APIs",
     author="HichemELB",
-    url="https://github.com/DTSL/target-amplitude-batch.git",
+    url="git@github.com:DTSL/target-amplitude-batch.git",
     classifiers=["Programming Language :: Python :: 3 :: Only"],
     py_modules=["target_amplitude_batch"],
     install_requires=[
