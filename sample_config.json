@@ -1,5 +1,6 @@
 {
-  "username": "my_username",
-  "password": "my_password",
-  "start_date": "2017-01-01T00:00:00Z"
+  "projectID": "1234",
+  "api_key": "Amplitude api_key of projectID 1234",
+  "secret_key": "Amplitude secret_key of projectID 1234",
+  "start_date": "2000-01-01T00:00:00Z"
 }
