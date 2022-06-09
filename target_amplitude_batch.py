@@ -5,6 +5,7 @@ import io
 import sys
 import json
 import logging
+import warnings
 from datetime import datetime
 from typing import Dict, Optional
 
@@ -12,7 +13,7 @@ from jsonschema.validators import Draft4Validator
 import singer
 from adjust_precision_for_schema import adjust_decimal_precision_for_schema
 
-from amplitude import Amplitude, BaseEvent, Config
+from amplitude import Amplitude, BaseEvent, Config, Identify, EventOptions
 
 logger = logging.getLogger(__name__)
 
@@ -29,15 +30,19 @@ class UserIdException(Exception):
     pass
 
 
-class EventTrack(Exception):
+class EventTrack(UserWarning):
+    pass
+
+class IdentifyEvent(Exception):
     pass
 
 
-class BuildEvent(Exception):
-    pass
-
-
-def emit_state(state):
+def emit_state(state: Dict) -> None:
+    """
+    Write state in stdout
+    :param state:
+    :return: write state in stdout
+    """
     if state is not None:
         line = json.dumps(state)
         logger.debug("Emitting state {}".format(line))
@@ -45,11 +50,16 @@ def emit_state(state):
         sys.stdout.flush()
 
 
-def convert_to_timestamp_millis(dt):
+def convert_to_timestamp_millis(dt) -> int:
+    """
+    Convert DateTime object to epoch DateTime in milliseconds
+    :param dt: DateTime object
+    :return: epoch DateTime in milliseconds
+    """
     return int(datetime.strptime(dt, "%Y-%m-%dT%H:%M:%S+00:00").timestamp()) * 1000
 
 
-def callback_function(event, code, message=None):
+def callback_function(event, code, message=None) -> None:
     """
     A callback function
     :param event: the event that triggered this callback
@@ -65,6 +75,12 @@ def persist_events(
     messages: io.TextIOWrapper,
     config: Optional[Dict],
 ) -> Dict:
+    """
+    Process message from local Buffered objects
+    :param messages: Messages / events to process
+    :param config: Configuration Dict
+    :return: Dict of the state of processed events / messages
+    """
     state = None
     schemas = {}
     key_properties = {}
@@ -111,13 +127,6 @@ def persist_events(
                             )
                         )
 
-                if "event_type" not in event_raw.keys():
-                    raise EventType(
-                            "event_type must be specified in: \n{}".format(
-                                event_raw
-                            )
-                        )
-
                 if len(event_raw["user_id"]) < 5:
                     raise UserIdException(
                         "A user_id must have a minimum length of 5 characters in: \n{}".format(
@@ -128,28 +137,43 @@ def persist_events(
                 if event_raw["time"]:
                     event_raw["time"] = convert_to_timestamp_millis(event_raw["time"])
 
-                # clean BigQuery meta data
-                bq_meta_to_remove = (
-                    "_sdc_extracted_at",
-                    "_sdc_batched_at",
-                    "_etl_tstamp",
-                )
-                for k in bq_meta_to_remove:
-                    event_raw.pop(k, None)
-
-                # Create a BaseEvent instance
-                event = BaseEvent(event_type=event_raw["event_type"])
-
-                # Set event attributes
-                for key in event_raw.keys():
-                    if key not in event.__dict__:
-                        raise BuildEvent(
-                            "Unexpected event property key: {}".format(key)
+                # process events
+                if not config["is_identify_event"]:
+                    # Create a BaseEvent instance
+                    if "event_type" not in event_raw.keys():
+                        raise EventType(
+                            "event_type must be specified in: \n{}".format(event_raw)
                         )
 
-                    event[key] = event_raw[key]
+                    event = BaseEvent(event_type=event_raw["event_type"])
 
-                amplitude_client.track(event)
+                    # Set event attributes
+                    for key in event_raw.keys():
+                        if key in event.__dict__:
+                            event[key] = event_raw[key]
+                        else:
+                            warnings.warn(
+                                "Unexpected event property key: {}".format(key),
+                                EventTrack,
+                            )
+
+                    # Send event
+                    amplitude_client.track(event)
+
+                else:
+                    # Create a Identify object and pass user properties
+                    user_properties = Identify()
+                    if event_raw["user_properties"]:
+                        user_properties = user_properties.user_properties(
+                            event_raw["user_properties"]
+                        )
+                    else:
+                        raise IdentifyEvent("missing user_properties key in: \n{}".format(event_raw))
+
+                    # Track a IdentifyEvent to update user properties
+                    amplitude_client.identify(
+                        user_properties, EventOptions(user_id=event_raw["user_id"])
+                    )
 
                 state = None
             elif message_type == "STATE":
@@ -175,7 +199,7 @@ def persist_events(
             raise
         except EventType:
             raise
-        except BuildEvent:
+        except IdentifyEvent:
             raise
         except Exception as err:
             logger.error(err)
@@ -187,7 +211,11 @@ def persist_events(
     return state
 
 
-def main():
+def main() -> None:
+    """
+    Process input messages and emit state
+    :return: None
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", help="Config file")
     args = parser.parse_args()

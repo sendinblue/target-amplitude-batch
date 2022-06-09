@@ -1,5 +1,5 @@
 {
-  "api_key": "Amplitude api_key of Amplitude projectID",
+  "api_key": "Amplitude api_key of Amplitude project ID",
   "flush_queue_size": 100,
   "flush_interval_millis": 10000,
   "flush_max_retries": 5,
