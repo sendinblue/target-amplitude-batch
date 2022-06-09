@@ -30,9 +30,6 @@ class UserIdException(Exception):
     pass
 
 
-class EventTrack(UserWarning):
-    pass
-
 class IdentifyEvent(Exception):
     pass
 
@@ -152,10 +149,7 @@ def persist_events(
                         if key in event.__dict__:
                             event[key] = event_raw[key]
                         else:
-                            warnings.warn(
-                                "Unexpected event property key: {}".format(key),
-                                EventTrack,
-                            )
+                            logger.warning("Unexpected event property key: {}".format(key))
 
                     # Send event
                     amplitude_client.track(event)
