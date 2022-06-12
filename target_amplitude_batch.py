@@ -131,9 +131,6 @@ def persist_events(
                         )
                     )
 
-                if event_raw["time"]:
-                    event_raw["time"] = convert_to_timestamp_millis(event_raw["time"])
-
                 # process events
                 if not config["is_identify_event"]:
                     # Create a BaseEvent instance
@@ -144,30 +141,40 @@ def persist_events(
 
                     event = BaseEvent(event_type=event_raw["event_type"])
 
-                    # Set event attributes
                     for key in event_raw.keys():
+                        # Convert event time to timestamp millis as required by Amplitude
+                        if key == "time":
+                            event_raw[key] = convert_to_timestamp_millis(event_raw[key])
+
+                        # Set event attributes
                         if key in event.__dict__:
                             event[key] = event_raw[key]
                         else:
-                            logger.warning("Unexpected event property key: {}".format(key))
+                            logger.warning("Unexpected event property: {}".format(key))
 
                     # Send event
                     amplitude_client.track(event)
 
                 else:
-                    # Create a Identify object and pass user properties
+                    # Process user properties
                     user_properties = Identify()
-                    if event_raw["user_properties"]:
-                        user_properties = user_properties.user_properties(
-                            event_raw["user_properties"]
+                    if event_raw["user_property"]:
+                        for k, v in event_raw["user_property"].items():
+                            user_properties.set(k, v)
+                        amplitude_client.identify(
+                            user_properties, EventOptions(user_id=event_raw["user_id"])
                         )
-                    else:
-                        raise IdentifyEvent("missing user_properties key in: \n{}".format(event_raw))
+                        # Send empty event to refresh user properties
+                        event = BaseEvent(
+                            event_type="Empty event to refresh user properties",
+                            user_id=event_raw["user_id"],
+                        )
+                        amplitude_client.track(event)
 
-                    # Track a IdentifyEvent to update user properties
-                    amplitude_client.identify(
-                        user_properties, EventOptions(user_id=event_raw["user_id"])
-                    )
+                    else:
+                        raise IdentifyEvent(
+                            "Unexpected event property: \n{}".format(event_raw)
+                        )
 
                 state = None
             elif message_type == "STATE":
