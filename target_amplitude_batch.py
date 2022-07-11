@@ -132,7 +132,7 @@ def persist_events(
                     )
 
                 # process events
-                if not config["is_identify_event"]:
+                if not config["is_batch_identify"]:
                     # Create a BaseEvent instance
                     if "event_type" not in event_raw.keys():
                         raise EventType(
