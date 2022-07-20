@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from setuptools import setup
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 
 setup(
     name="target-amplitude-batch",
@@ -16,6 +16,7 @@ setup(
         "adjust-precision-for-schema==0.3.3",
         "jsonschema==2.6.0",
         "amplitude-analytics==0.3.0",
+        "pytz==2022.1",
     ],
     entry_points="""
     [console_scripts]

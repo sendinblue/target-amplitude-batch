@@ -5,7 +5,7 @@ import io
 import sys
 import json
 import logging
-import warnings
+import pytz
 from datetime import datetime
 from typing import Dict, Optional
 
@@ -53,7 +53,8 @@ def convert_to_timestamp_millis(dt) -> int:
     :param dt: DateTime object
     :return: epoch DateTime in milliseconds
     """
-    return int(datetime.strptime(dt, "%Y-%m-%dT%H:%M:%S+00:00").timestamp()) * 1000
+    dt = datetime.strptime(dt, "%Y-%m-%dT%H:%M:%S+00:00").replace(tzinfo=pytz.utc)
+    return int(dt.timestamp()) * 1000
 
 
 def callback_function(event, code, message=None) -> None:
