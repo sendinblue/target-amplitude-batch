@@ -151,7 +151,7 @@ def persist_events(
                         if key in event.__dict__:
                             event[key] = event_raw[key]
                         else:
-                            logger.warning("Unexpected event property: {}".format(key))
+                            logger.debug("Unexpected property: {}".format(key))
 
                     # Send event
                     amplitude_client.track(event)
@@ -174,7 +174,7 @@ def persist_events(
 
                     else:
                         raise IdentifyEvent(
-                            "Unexpected event property: \n{}".format(event_raw)
+                            "Unexpected property: \n{}".format(event_raw)
                         )
 
                 state = None
