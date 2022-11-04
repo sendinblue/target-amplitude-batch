@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 from setuptools import setup
 
-VERSION = "1.1.2"
-
 setup(
     name="target-amplitude-batch",
-    version=VERSION,
+    version="2.0.0",
     description="Singer.io target for loading data to Amplitude Batch / Identify APIs",
     author="HichemELB",
     url="git@github.com:DTSL/target-amplitude-batch.git",
@@ -15,7 +13,7 @@ setup(
         "singer-python==5.12.2",
         "adjust-precision-for-schema==0.3.3",
         "jsonschema==2.6.0",
-        "amplitude-analytics==0.3.0",
+        "amplitude-analytics==1.1.0",
         "pytz==2022.1",
     ],
     entry_points="""

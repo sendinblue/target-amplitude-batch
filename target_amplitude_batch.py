@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-
 import argparse
 import io
 import sys
 import json
 import logging
-import pytz
-from datetime import datetime
+
+from utils import (
+    callback_function,
+    emit_state,
+    convert_to_timestamp_millis,
+    to_float,
+)
+
 from typing import Dict, Optional
 
 from jsonschema.validators import Draft4Validator
@@ -34,41 +39,6 @@ class IdentifyEvent(Exception):
     pass
 
 
-def emit_state(state: Dict) -> None:
-    """
-    Write state in stdout
-    :param state:
-    :return: write state in stdout
-    """
-    if state is not None:
-        line = json.dumps(state)
-        logger.debug("Emitting state {}".format(line))
-        sys.stdout.write("{}\n".format(line))
-        sys.stdout.flush()
-
-
-def convert_to_timestamp_millis(dt) -> int:
-    """
-    Convert DateTime object to epoch DateTime in milliseconds
-    :param dt: DateTime object
-    :return: epoch DateTime in milliseconds
-    """
-    dt = datetime.strptime(dt, "%Y-%m-%dT%H:%M:%S+00:00").replace(tzinfo=pytz.utc)
-    return int(dt.timestamp()) * 1000
-
-
-def callback_function(event, code, message=None) -> None:
-    """
-    A callback function
-    :param event: the event that triggered this callback
-    :param code: status code of request response
-    :param message: a optional string message for more detailed information
-    :return: None
-    """
-    logger.info("event {}".format(event))
-    logger.info("code: {} \n message: {}".format(code, message))
-
-
 def persist_events(
     messages: io.TextIOWrapper,
     config: Optional[Dict],
@@ -89,14 +59,15 @@ def persist_events(
         flush_interval_millis=config["flush_interval_millis"],
         flush_max_retries=config["flush_max_retries"],
         use_batch=config["use_batch"],
-        callback=callback_function,
         logger=logger,
+        callback=callback_function,
     )
 
     amplitude_client = Amplitude(
         api_key=config["api_key"], configuration=amp_configuration
     )
 
+    to_upload_list = []
     for message in messages:
         try:
             o = singer.parse_message(message).asdict()
@@ -111,7 +82,8 @@ def persist_events(
                         )
                     )
 
-                validators[o["stream"]].validate((o["record"]))
+                if config["is_schemaless"]:
+                    validators[o["stream"]].validate((o["record"]))
 
                 # Build event
                 event_raw = o["record"]
@@ -132,6 +104,10 @@ def persist_events(
                         )
                     )
 
+                # Enforce casting revenue properties as float to comply with Amplitude standards
+                if event_raw["revenue"]:
+                    event_raw["revenue"] = to_float(event_raw["revenue"])
+
                 # process events
                 if not config["is_batch_identify"]:
                     # Create a BaseEvent instance
@@ -150,28 +126,25 @@ def persist_events(
                         # Set event attributes
                         if key in event.__dict__:
                             event[key] = event_raw[key]
+                            {}.pop
                         else:
                             logger.debug("Unexpected property: {}".format(key))
 
-                    # Send event
-                    amplitude_client.track(event)
-
+                    # Build BaseEvent list
+                    to_upload_list.append(event)
                 else:
                     # Process user properties
                     user_properties = Identify()
                     if event_raw["user_property"]:
                         for k, v in event_raw["user_property"].items():
                             user_properties.set(k, v)
-                        amplitude_client.identify(
-                            user_properties, EventOptions(user_id=event_raw["user_id"])
-                        )
-                        # Send empty event to refresh user properties
-                        event = BaseEvent(
-                            event_type="Empty event to refresh user properties",
-                            user_id=event_raw["user_id"],
-                        )
-                        amplitude_client.track(event)
 
+                        to_upload_list.append(
+                            (
+                                user_properties,
+                                EventOptions(user_id=event_raw["user_id"]),
+                            )
+                        )
                     else:
                         raise IdentifyEvent(
                             "Unexpected property: \n{}".format(event_raw)
@@ -208,6 +181,12 @@ def persist_events(
             raise
         finally:
             amplitude_client.flush()
+
+    if len(to_upload_list) > 0:
+        for e in to_upload_list:
+            amplitude_client.track(e) if not config[
+                "is_batch_identify"
+            ] else amplitude_client.identify(e)
 
     amplitude_client.shutdown()
     return state

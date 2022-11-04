@@ -8,9 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-.idea/
 env/
-local_env/
 build/
 develop-eggs/
 dist/
@@ -103,4 +101,4 @@ rsa-key
 tags
 singer-check-tap-data
 state.json
-
+/local_env/
