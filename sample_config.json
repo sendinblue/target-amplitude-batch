@@ -1,9 +1,9 @@
 {
-  "api_key": "Amplitude api_key of Amplitude project ID",
-  "flush_queue_size": 100,
-  "flush_interval_millis": 10000,
-  "flush_max_retries": 5,
+  "api_key": "Amplitude api_key of the projectID to which we want to send the data",
+  "flush_queue_size": 10000,
+  "flush_interval_millis": 1000,
+  "flush_max_retries": 12,
   "use_batch": true,
   "is_batch_identify": false,
-  "start_date": "2000-01-01T00:00:00Z"
+  "is_schemaless": false
 }
