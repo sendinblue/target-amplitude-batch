@@ -8,7 +8,7 @@ setup(
     author="HichemELB",
     url="git@github.com:DTSL/target-amplitude-batch.git",
     classifiers=["Programming Language :: Python :: 3 :: Only"],
-    py_modules=["target_amplitude_batch"],
+    py_modules=["target_amplitude_batch", "utils"],
     install_requires=[
         "singer-python==5.12.2",
         "adjust-precision-for-schema==0.3.3",
