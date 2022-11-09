@@ -12,7 +12,7 @@ following the [Singer spec](https://github.com/singer-io/getting-started/blob/ma
 - [Install target-amplitude-batch](#dependencies)
 - [How to use it](#how-to-use-it)
     - [Step 1: Set up tap-bigquery](#step-1-set-up-tap-bigquery)
-    - [Step 2: Add tap config file](#step-2-add-tap-config file)
+    - [Step 2: Add tap config file](#step-2-add-tap-config-file)
     - [Step 3: Create catalog](#step-3-create-catalog)
     - [Step 3: Run](#step-4-run)
 - [State](#State)
