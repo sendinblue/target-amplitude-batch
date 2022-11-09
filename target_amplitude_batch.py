@@ -104,10 +104,6 @@ def persist_events(
                         )
                     )
 
-                # Enforce casting revenue properties as float to comply with Amplitude standards
-                if event_raw["revenue"]:
-                    event_raw["revenue"] = to_float(event_raw["revenue"])
-
                 # process events
                 if not config["is_batch_identify"]:
                     # Create a BaseEvent instance
@@ -123,7 +119,12 @@ def persist_events(
                         if key == "time":
                             event_raw[key] = convert_to_timestamp_millis(event_raw[key])
 
-                        # Set event attributes
+                        # Enforce casting revenue properties as float to comply with Amplitude standards
+                        if key == "revenue":
+                            event_raw[key] = to_float(event_raw[key])
+
+
+                            # Set event attributes
                         if key in event.__dict__:
                             event[key] = event_raw[key]
                             {}.pop
