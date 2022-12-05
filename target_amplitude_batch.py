@@ -187,7 +187,7 @@ def persist_events(
         for e in to_upload_list:
             amplitude_client.track(e) if not config[
                 "is_batch_identify"
-            ] else amplitude_client.identify(e)
+            ] else amplitude_client.identify(e[0], e[1])
 
     amplitude_client.shutdown()
     return state
