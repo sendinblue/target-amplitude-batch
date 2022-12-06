@@ -144,6 +144,7 @@ def persist_events(
                             (
                                 user_properties,
                                 EventOptions(user_id=event_raw["user_id"]),
+                                event_raw["groups"]
                             )
                         )
                     else:
@@ -187,7 +188,7 @@ def persist_events(
         for e in to_upload_list:
             amplitude_client.track(e) if not config[
                 "is_batch_identify"
-            ] else amplitude_client.identify(e[0], e[1])
+            ] else amplitude_client.identify(e[0], e[1], e[2])
 
     amplitude_client.shutdown()
     return state
