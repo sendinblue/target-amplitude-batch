@@ -169,26 +169,43 @@ def persist_events(
 
         except json.decoder.JSONDecodeError:
             logger.error("Unable to parse:\n{}".format(message))
+            logger.info("broken")
             raise
         except MessageType:
+            logger.error("error MessageType- {}".format(message))
+            logger.info("broken")
             raise
         except UserIdException:
+            logger.error("error UserIdException- {}".format(message))
+            logger.info("broken")
             raise
         except EventType:
+            logger.error("error EventType- {}".format(message))
+            logger.info("broken")
             raise
         except IdentifyEvent:
+            logger.error("error IdentifyEvent- {}".format(message))
+            logger.info("broken")
             raise
         except Exception as err:
             logger.error(err)
+            logger.info("broken")
             raise
         finally:
             amplitude_client.flush()
 
     if len(to_upload_list) > 0:
+        logger.info("length of list of records to be uploaded to Amplitude before - {}".format(len(to_upload_list)))
         for e in to_upload_list:
-            amplitude_client.track(e) if not config[
-                "is_batch_identify"
-            ] else amplitude_client.identify(e[0], e[1], e[2])
+
+            if not config["is_batch_identify"]:
+                logger.info("record to be tracked to Amplitude (before) - {}".format(e))
+                amplitude_client.track(e) 
+            else:
+                logger.info("not tracking records - {}".format(e))
+                amplitude_client.identify(e[0], e[1], e[2])
+    else:
+        logger.info("length of list of records to be uploaded to Amplitude when error occured- {}".format(len(to_upload_list)))
 
     amplitude_client.shutdown()
     return state
